@@ -11,13 +11,34 @@ import plotly.graph_objects as go
 import pandas as pd
 
 sys.path.insert(0, os.path.dirname(__file__))
-from apikey import apikey
 
 # ─── Config ───────────────────────────────────────────────────────
 st.set_page_config(page_title="AI Agent Dashboard", layout="wide", initial_sidebar_state="expanded")
 PAGE_SIZE = 20
 DB_PATH = os.path.join(os.path.dirname(__file__), "dashboard.db")
-os.environ['SERPAPI_API_KEY'] = '2c0b2505e505644a2c43da7a76055c48344c7cf4078f5f09b34fb1e6a60555e8'
+
+# API Keys: st.secrets (cloud) → env vars → apikey.py (local dev)
+try:
+    OPENAI_API_KEY = st.secrets.get("OPENAI_API_KEY", os.environ.get("OPENAI_API_KEY", ""))
+    SERPAPI_API_KEY = st.secrets.get("SERPAPI_API_KEY", os.environ.get("SERPAPI_API_KEY", ""))
+except Exception:
+    OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
+    SERPAPI_API_KEY = os.environ.get("SERPAPI_API_KEY", "")
+
+if not OPENAI_API_KEY:
+    try:
+        from apikey import apikey as OPENAI_API_KEY
+    except ImportError:
+        st.error("OPENAI_API_KEY not found. Set it in secrets, env, or apikey.py")
+        st.stop()
+
+if not SERPAPI_API_KEY:
+    try:
+        from apikey import serpapi_key
+    except ImportError:
+        SERPAPI_API_KEY = ""
+
+os.environ['SERPAPI_API_KEY'] = SERPAPI_API_KEY
 
 # ─── Database ─────────────────────────────────────────────────────
 def init_db():
@@ -173,7 +194,7 @@ def build_tools_and_agents():
     cfg = st.session_state.get("cfg", {})
     llm_kwargs = dict(
         model=cfg.get("model", "openai/gpt-4o-mini"),
-        api_key=apikey,
+        api_key=OPENAI_API_KEY,
         base_url="https://openrouter.ai/api/v1",
         temperature=float(cfg.get("temperature", 0)),
         max_tokens=int(cfg.get("max_tokens", 1024)),
@@ -459,8 +480,8 @@ def page_config():
 
     st.markdown("---")
     st.subheader("API Keys")
-    st.text_input("OpenAI / OpenRouter Key", value=apikey[:10]+"..."+apikey[-4:], disabled=True)
-    st.text_input("SERPAPI Key", value="2c0b2505...", disabled=True)
+    st.text_input("OpenAI / OpenRouter Key", value=OPENAI_API_KEY[:10]+"..."+OPENAI_API_KEY[-4:], disabled=True)
+    st.text_input("SERPAPI Key", value=SERPAPI_API_KEY[:10]+"..."+SERPAPI_API_KEY[-4:], disabled=True)
 
     st.markdown("---")
     st.subheader("Database Stats")
