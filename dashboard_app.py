@@ -11,13 +11,15 @@ import plotly.graph_objects as go
 import pandas as pd
 
 sys.path.insert(0, os.path.dirname(__file__))
+from dotenv import load_dotenv
+load_dotenv()
 
 # ─── Config ───────────────────────────────────────────────────────
 st.set_page_config(page_title="AI Agent Dashboard", layout="wide", initial_sidebar_state="expanded")
 PAGE_SIZE = 20
 DB_PATH = os.path.join(os.path.dirname(__file__), "dashboard.db")
 
-# API Keys: st.secrets (cloud) → env vars → apikey.py (local dev)
+# API Keys: st.secrets (cloud) → .env file (local)
 try:
     OPENAI_API_KEY = st.secrets.get("OPENAI_API_KEY", os.environ.get("OPENAI_API_KEY", ""))
     SERPAPI_API_KEY = st.secrets.get("SERPAPI_API_KEY", os.environ.get("SERPAPI_API_KEY", ""))
@@ -26,17 +28,8 @@ except Exception:
     SERPAPI_API_KEY = os.environ.get("SERPAPI_API_KEY", "")
 
 if not OPENAI_API_KEY:
-    try:
-        from apikey import apikey as OPENAI_API_KEY
-    except ImportError:
-        st.error("OPENAI_API_KEY not found. Set it in secrets, env, or apikey.py")
-        st.stop()
-
-if not SERPAPI_API_KEY:
-    try:
-        from apikey import serpapi_key
-    except ImportError:
-        SERPAPI_API_KEY = ""
+    st.error("OPENAI_API_KEY not found. Set it in st.secrets or a .env file")
+    st.stop()
 
 os.environ['SERPAPI_API_KEY'] = SERPAPI_API_KEY
 
