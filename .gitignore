@@ -3,3 +3,6 @@ __pycache__/
 *.pyc
 dashboard.db
 .env
+apikey.py
+config.py
+secrets.toml
